@@ -1,0 +1,407 @@
+#include <cstdlib>
+#include <iostream>
+#include <string.h>
+#include <climits>
+#include <algorithm>
+#include <math.h>
+
+using namespace std;
+
+template <class el>
+class CircularDynamicArray{
+public:
+        CircularDynamicArray(){
+                cap = 2;
+                frontNum = 0;
+                tailNum = 0;
+                data = new el[cap];
+        } // Default Constructor. The array should be of capacity 2
+        CircularDynamicArray(int s){
+                cap = s;
+                frontNum = s;
+                tailNum = 0;
+
+                data = new el[cap];
+        } // For this constructor the array should be of capacity and size s.
+        CircularDynamicArray(const CircularDynamicArray &a){
+                data = new el[a.cap];
+                memcpy(data, a.data, sizeof(el)*a.cap);
+                cap = data.cap;
+                frontNum = data.frontNum;
+                tailNum = data.tailNum;
+        } // copy constructor
+        ~CircularDynamicArray(){
+                if(data){
+                        free(data);
+                        data = NULL;
+                }
+                frontNum = 0;
+                tailNum = 0;
+                cap = 2;
+        } // Destructor for the class.
+        const CircularDynamicArray& operator = (const CircularDynamicArray &a){
+                data = new el[a.cap];
+                cap = a.cap;
+                frontNum = a.frontNum;
+                tailNum = a.tailNum;
+                memcpy(data, a.data, sizeof(el)*(cap));
+                return *this;
+        } // assignment operator
+
+        el& operator[](int i){
+             if(i >= cap || i < 0){
+                  cout << "Out of bounds reference : " << i << "\n";
+                  error = i;
+                  return error;
+          }
+             else{
+                     return data[((cap - tailNum) + i) % cap];
+             }
+        } // Traditional [] operator. Should print a message if i is out of bounds and return a reference to value of type elmtype stored in the class for this purpose..
+
+        void addEnd(el v){
+             if(frontNum + tailNum == cap){
+                     int oldSize = frontNum + tailNum;
+                     el *temp = new el[oldSize*2];
+                     for(int i = 0; i < oldSize; i++){
+                             int ind = ((oldSize - tailNum) + i) % oldSize;
+                             temp[i] = data[ind];
+                     }
+                     delete data;
+                     data = temp;
+                     cap = cap*2;
+                     frontNum = oldSize;
+                     tailNum = 0;
+          }
+             data[frontNum % cap] = v;
+             frontNum++;
+        } // increases the size of the array by 1 and stores v at the beginning of the array. Should double the capacity when the new element doesn't fit. The new element should be the item returned at index 0.
+        void addFront(el v){
+                if(frontNum + tailNum == cap){
+                        int oldSize = frontNum + tailNum;
+                        el *temp = new el[oldSize*2];
+                        for(int i = 0; i < oldSize; i++){
+                                int ind = ((oldSize - tailNum) + i) % oldSize;
+                                temp[i] = data[ind];
+                        }
+                        delete data;
+                        data = temp;
+                        cap = cap*2;
+                        frontNum = oldSize;
+                        tailNum = 0;
+             }
+             if(frontNum == 0 && tailNum == 0){
+                  data[0] = v;
+             }
+             else{
+                  data[(cap - tailNum - 1) % cap] = v;
+             }
+             tailNum++;
+        } // increases the size of the array by 1 and stores v at the end of the array. Should double the capacity when the new element doesn't fit.
+        void delEnd(){
+            frontNum--;
+            if(frontNum + tailNum <= cap/4){
+                 int oldSize = frontNum + tailNum;
+                 el *temp = new el[oldSize/2];
+                 for(int i = 0; i < oldSize; i++){
+                        int ind = ((cap - tailNum) + i) % cap;
+                        temp[i] = data[ind];
+                 }
+                 delete data;
+                 data = temp;
+                 cap = cap/2;
+                 frontNum = oldSize;
+                 tailNum = 0;
+            }
+        } // reduces the size of the array by 1 at the end. Should shrink the capacity when only 25% of the array is in use after the delete.
+        void delFront(){
+                tailNum--;
+                if(frontNum + tailNum <= cap/4){
+                     int oldSize = frontNum + tailNum;
+                     el *temp = new el[oldSize/2];
+                     for(int i = 0; i < oldSize; i++){
+                            int ind = ((cap - tailNum) + i) % cap;
+                            temp[i] = data[ind];
+                     }
+                     delete data;
+                     data = temp;
+                     cap = cap/2;
+                     frontNum = oldSize;
+                     tailNum = 0;
+                }
+        } // reduces the size of the array by 1 at the beginning of the array. Should shrink the capacity when only 25% of the array is in use after the delete.
+
+
+        int length(){
+                return frontNum + tailNum;
+        } // returns the size of the array.
+        int capacity(){
+                return cap;
+        } // returns the capacity of the array.
+        int clear(){
+                if(data){
+                        free(data);
+                        data = NULL;
+                }
+                cap = 2;
+                frontNum = 0;
+                tailNum = 0;
+                data = (el *)malloc(cap*sizeof(el));
+        } // Frees any space currently used and starts over with an array of capacity 2.
+
+        void getTailNum(){
+                cout << "\ntailNum is : " << tailNum << endl;
+        }
+        void getFrontNum(){
+                cout << "frontNum is :  " << frontNum << "\n\n";
+        }
+
+                void shift(){
+                el *temp = new el[cap];
+                for(int i = 0; i < frontNum+tailNum; i++){
+                        temp[i] = data[((cap - tailNum) + i) % cap];
+                }
+                delete data;
+                data = temp;
+                delete temp;
+                frontNum = frontNum + tailNum;
+                tailNum = 0;
+        }
+                void swap(int *a, int *b){
+                int temp = *a;
+                *a = *b;
+                *b = temp;
+        }
+                int partition(int arr[], int l, int r){
+             int x = arr[r], i = l;
+             for(int j = l; j <=r-1; j++){
+                  if(arr[j] <= x){
+                       swap(&arr[i], &arr[j]);
+                       i++;
+                  }
+             }
+             swap(&arr[i], &arr[r]);
+             return i;
+        }
+                el HelperQS(el data[], int l, int r, int k){
+                if(k <= 0 || k > r-l+1){
+                        return -1;
+                }
+                int index = partition(data, l, r);
+                if(index - l == k - 1){
+                        return data[index];
+                }
+                if(index - l > k - 1){
+                        return HelperQS(data, l, index-1, k);
+                }
+                else{
+                        return HelperQS(data, index+1, r, k-index+l-1);
+                }
+        }
+        el QuickSelect(int k){
+                shift();
+                int l = 0;
+                int r = frontNum - 1;
+                el x = HelperQS(data, l, r, k);
+                return x;
+        } // returns the kth smallest element in the array using the quickselect algorithm.
+
+                int part(el data[], int l, int r, int x){
+                        int i;
+                        for(i = l; i < r; i++){
+                                if(data[i] == x){
+                                        break;
+                                }
+                                swap(&data[i], &data[r]);
+                        }
+                        i = l;
+                        for(int j = l; j <= r-1; j++){
+                                if(data[j] <= x){
+                                        swap(&data[i], &data[j]);
+                                        i++;
+                                }
+                        }
+                        swap(&data[i], &data[r]);
+                        return i;
+                }
+                el findMedian(el data[], int n){
+                        sort(data, data+n);
+                        return data[n/2];
+                }
+                el HelperWCS(el data[], int l, int r, int k){
+                        if(k < 0 || k > r-l+1){
+                                return -1;
+                        }
+                        int n = r-l+1;
+                        int i;
+                        el median[(n+4)/5];
+                        for(i = 0; i < n/5; i++){
+                                median[i] = findMedian(data+l+i*5, 5);
+                        }
+                        if(i*5<n){
+                                median[i] = findMedian(data+l+i*5, n%5);
+                                i++;
+                        }
+                        el medOfMed = (i == 1)? median[i-1]:
+                                                HelperWCS(median, 0, i-1, i/2);
+
+                        int pos = part(data, l, r, medOfMed);
+
+                        if(pos-1 == k-1){
+                                return data[pos];
+                        }
+                        if(pos-1 > k-1){
+                                return HelperWCS(data, l, pos-1, k);
+                        }
+                        return HelperWCS(data, pos+1, r, k-pos+l-1);
+                }
+        el WCSelect(int k){
+                shift();
+                int l = 0;
+                int r = frontNum -1;
+                el x = HelperWCS(data, l, r, k);
+                return x;
+        } // returns the kth smallest element in the array using the worst case O(N) time algorithm.
+
+                void Merge(el data[], int l, int m, int r){
+                int i, j, k;
+                int n1 = m - l + 1;
+                int n2 = r - m;
+
+                el L[n1], R[n2];
+
+                for(i = 0; i < n1; i++){
+                        L[i] = data[l+i];
+                }
+                for(j = 0; j < n2; j++){
+                        R[j] = data[m+1+j];
+                }
+                i = 0;
+                j = 0;
+                k = l;
+
+                while(i < n1 && j < n2){
+                        if(L[i] <= R[j]){
+                                data[k] = L[i];
+                                i++;
+                        }
+                        else{
+                                data[k] = R[j];
+                                j++;
+                        }
+                        k++;
+                }
+                while(i < n1){
+                        data[k] = L[i];
+                        i++;
+                        k++;
+                }
+                while(j < n2){
+                        data[k] = R[j];
+                        j++;
+                        k++;
+                }
+        }
+                void MergeSort(el data[], int l, int r){
+                if (l<r){
+                        int m = (l+r)/2;
+                        MergeSort(data, l, m);
+                        MergeSort(data, m+1, r);
+                        Merge(data, l, m, r);
+                }
+        }
+        void stableSort(){
+                //MERGE SORT
+                shift();
+                int l = 0;
+                int r = frontNum-1;
+                MergeSort(data, l, r);
+        } // Sorts the values in the array using a comparison based O(N lg N) algorithm. The sort must be stable.
+
+
+
+
+        void countSort(el data[], int n, int exp, int z){
+                int output[n];
+                int i, count[z] = {0};
+
+                for(i = 0; i < n; i++){
+                        count[ (data[i]/exp) % z]++;
+                }
+                for(i = 1; i < z; i++){
+                        count[i] += count[i-1];
+                }
+                for(i = n-1; i>=0; i--){
+                        output[count[ (data[i]/exp)%z] -1] = data[i];
+                        count[ (data[i]/exp)%z]--;
+                }
+                for(i = 0; i < n; i++){
+                        data[i] = output[i];
+                }
+        }
+        int getMax(el data[], int frontNum){
+                int max = 0;
+                for(int i = 0; i < frontNum; i++){
+                        if(data[i] > max){
+                                max = data[i];
+                        }
+                }
+                return max;
+        }
+        void radixSort(int i){
+                shift();
+                int z = 2;
+                for(int x = 0; x < i-1; x++){
+                        z = z*2;
+                }
+                int n = sizeof(data)/sizeof(data[0]);
+                int m = getMax(data, frontNum);
+
+                int exp = 1;
+                for(int exp = 1; m/exp > 0; exp = exp*z){
+                        countSort(data, n, exp,z);
+                }
+
+
+        } // Sorts the values in the array using a radix based sort on the low order i bits of elmtype.
+
+
+
+
+        int linearSearch(el e){
+             for(int i = 0; i < frontNum+tailNum; i++){
+                  if(data[((cap-tailNum)+i)%cap] == e){
+                       return i;
+                  }
+             }
+             return -1;
+        } // Performs a linear search of the array looking for the item e. Returns the index of the item if found or -1 otherwise.
+
+        int binSearch(el e){
+             int first = 0;
+             int last = (frontNum + tailNum)-1;
+             int middle = (first+last)/2;
+             while(first <= last){
+                  if(data[middle] < e){
+                       first = middle + 1;
+                  }
+                  else if(data[middle] == e){
+                       return middle;
+                  }
+                  else{
+                       last = middle - 1;
+                  }
+                  middle = (first + last)/2;
+             }
+             return -1;
+        } // Performs a binary search of the array looking for the item e. Returns the index of the item if found or -1 otherwise. Assumes that the array is in sorted order.
+
+        //Your class should include proper memory management, including a destructor, a copy constructor, and a copy assignment operator.
+
+private:
+        int frontNum = 0;
+        int cap;
+        el* data;
+        int tailNum = 0;
+        el error;
+};
